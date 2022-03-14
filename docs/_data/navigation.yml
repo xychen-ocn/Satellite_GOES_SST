@@ -1,0 +1,14 @@
+# main links
+main:
+  - title: "Code Doc"
+    url: /code-doc/
+  - title: "Figures"
+    url: /figures-archive/
+  - title: "Notes"
+    url: /notes-archive/
+#  - title: "Contact"
+#    url: /contact/
+  # - title: "Sample Collections"
+  #   url: /collection-archive/
+  # - title: "Sitemap"
+  #   url: /sitemap/
