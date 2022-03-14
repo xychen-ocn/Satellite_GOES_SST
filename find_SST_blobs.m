@@ -22,6 +22,7 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
    
    default_cloudcond_type = 'relaxed';
    default_cloudcover_thres = 0.1;
+   default_checkflag=false;
    
    p = inputParser;
    % define parsing rules:
@@ -34,6 +35,7 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
    addParameter(p, 'cloudcoverage_thres', default_cloudcover_thres, @isnumeric);
    addParameter(p, 'LON_grid', XX, @isnumeric);
    addParameter(p, 'LAT_grid', YY, @isnumeric);
+   addParameter(p,'checkflag', default_checkflag, @islogical);
    
    % ready to parse the inputs:
    parse(p, f, fthres, minArea, cldmask, varargin{:});
@@ -45,12 +47,13 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
    cc_thres = p.Results.cloudcoverage_thres;
    XX = p.Results.LON_grid;
    YY = p.Results.LAT_grid;
+   checkflag = p.Results.checkflag;
    
    
    % ---------- main code starts from here on ------------- %
   
    fo = f;      % save original data, just for ploting at the end;
-   NConn =4;   %  Janssens et al. (2021) used 6-connectivity??
+   NConn =8;   %  Janssens et al. (2021) used 6-connectivity??
    
    %f=SST_anom; f0=dT_thres;
  
@@ -192,6 +195,7 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
        stats_exc.eccen = eccen(excluded_events);
        stats_exc.orientation = orien(excluded_events);
        
+       
        % I need to save the area of objects I dropped out to compute the cloud
        % density;
        
@@ -234,34 +238,35 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
            
            
            % PLOT CHECK
-           figure(10); clf;
-           pcolor(XX, YY, fo);shading flat%caxis([0,1]);
-           colorbar;colormap('parula');
-           hold on;
-           contour(XX,YY, fo,[-0.02,0.02],'-w');
-           scatter(XX(cldmask), YY(cldmask),6,[0.75 0.75 0.75],'+');
-           hold on;
-           if num_events>0
-               contour(XX, YY, f1,'r');
-               % construct the inidividual blob contour (to doboule check)
-               % tested, it can give the correct warmer blob pixels.
-               %             for ib = 1:length(blob_image)
-               %                 pcolor(bbox_GeoCoord(ib).lon, bbox_GeoCoord(ib).lat, double(blob_image{ib}));shading flat;
-               %             end
-               
-               
+           if checkflag
+               figure(10); clf;
+               pcolor(XX, YY, fo);shading flat%caxis([0,1]);
+               colorbar;colormap('parula');
                hold on;
-               plot(blob_GeoLocs.clon,blob_GeoLocs.clat,'r+','markersize',10);
+               contour(XX,YY, fo,[-0.02,0.02],'-w');
+               scatter(XX(cldmask), YY(cldmask),6,[0.75 0.75 0.75],'+');
+               hold on;
+               if num_events>0
+                   contour(XX, YY, f1,'r');
+                   % construct the inidividual blob contour (to doboule check)
+                   % tested, it can give the correct warmer blob pixels.
+                   %             for ib = 1:length(blob_image)
+                   %                 pcolor(bbox_GeoCoord(ib).lon, bbox_GeoCoord(ib).lat, double(blob_image{ib}));shading flat;
+                   %             end
+                   
+                   
+                   hold on;
+                   plot(blob_GeoLocs.clon,blob_GeoLocs.clat,'r+','markersize',10);
+                   
+                   contour(XX, YY,fexc,'--k','linewidth',1.);
+                   plot(excblobs.clon, excblobs.clat, '+k','markersize',8);
+               end
                
-               contour(XX, YY,fexc,'--k','linewidth',1.);
-               plot(excblobs.clon, excblobs.clat, '+k','markersize',8);
+               
+               xlabel('lon (# grid points)');ylabel('lat(# grid points)');
+               title('f, blobs, and centroids')
+               hold off;
            end
-           
-           
-           xlabel('lon (# grid points)');ylabel('lat(# grid points)');
-           title('f, blobs, and centroids')
-           hold off;
-           
            %% store all output in 1 single structure.
            blob_out.GeoLocs = [blob_GeoLocs.clon, blob_GeoLocs.clat];          % first column: lon, second column: lat
            blob_out.BoundingBoxSize = [blob_coord(:,5)*dlon , blob_coord(:,6)*dlat];
@@ -270,6 +275,8 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
            blob_out.blob_mask = f1;
            blob_out.blob_image = blob_image;                                   % N cells
            blob_out.blob_image_GeoCoord = bbox_GeoCoord;
+           blob_out.PixelIds = pixel_idx;
+
            status = 1;
        else
            % no cloud events

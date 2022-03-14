@@ -14,11 +14,15 @@ function blobs =retrieve_SST_and_relatedInfo_for_each_warm_blob(blobs, LON, LAT,
 % Outputs:
 % Authors:
 % Date: drafted Jan 11, 2022.
+SSTtype = 'warm';
 switch nargin
     case(5)
         cutout_extend = 0.1;
     case(6)
         cutout_extend = varargin{1};
+    case(7)
+        cutout_extend = varargin{1};
+        SSTtype = varargin{2};
 end
 
 NBlobs = length(blobs.GeoLocs);
@@ -70,11 +74,17 @@ for i = 1:NBlobs
     SST_anom = blobs.SST_cutouts{i} - SST_background;
     blobs.SSTa_cutouts{i} = SST_anom;
     % double check:
-    if max(SST_anom(:))<0
-        disp('error: SST_anom should not be negative! check code!')
-        return
+    if strcmp(SSTtype,'warm')
+        if max(SST_anom(:))<0
+            disp('error: SST_anom should not be negative! check code!')
+            return
+        else
+            blobs.max_SSTa(i) = max(SST_anom(:));                          % This should always be positive isn't it??
+        end
+        
     else
-        blobs.max_SSTa(i) = max(SST_anom(:));                          % This should always be positive isn't it??
+        blobs.max_coldSSTa(i) = min(SST_anom(:));
+        
     end
     
     % put in background SST (averaged in the bounding box region)

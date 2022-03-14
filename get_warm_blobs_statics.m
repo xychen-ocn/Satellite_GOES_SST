@@ -31,7 +31,7 @@ matfiles = dir([datasvdir filesep '*RHB_sampled_blobs.mat']);
 matFNs = {matfiles.name};
 t0 = 1;
 for i = 1:length(matfiles)
-    load([datadir filesep matFNs{i}]);   
+    load([datasvdir filesep matFNs{i}]);   
     nb = length(RHB_sampled_blobs);
     tN = t0+nb-1;
     all_RHBblobs(t0:tN) = RHB_sampled_blobs;
@@ -71,6 +71,7 @@ end
 RHBblobs.isSWC = group_RHBblobs_by_WaveletCoherenceflag(isSWC_timerange, all_RHBblobs);
 RHBblobs.notSWC = group_RHBblobs_by_WaveletCoherenceflag(notSWC_timerange, all_RHBblobs);
 
+flagNames = fields(RHBblobs);
 
 %% 2. get the 3S from these RHB sampled warm blobs. 
 stats.Strength = [all_RHBblobs_stats.SST_anom];
@@ -110,7 +111,6 @@ end
 
 %%
 figure(2); clf;
-flagNames = fields(RHBblobs);
 marker= {'o','d'};
 for i = 1:2
     flag = flagNames{i};
@@ -149,22 +149,27 @@ title({'compare blob characters on days','with and without SWC'});
 %% 3. make distribution plots
 % this one is what I need.
 figure(3); clf;
+nval=4;
+spatialres=2;   %km
 for j = 1:2
     flag = flagNames{j};
     
+    %stats_grp = get_blob_characters(RHBblobs.(flag), spatialres);
+    %varlist2 = fieldnames(stats_grp);
     stats_grp.Strength = [RHBblobs.(flag).max_SSTa];
     tmp_stats =  [RHBblobs.(flag).stats_selected];
     stats_grp.Shape = unique([tmp_stats.MajAxisLen])./[tmp_stats.MinAxisLen];
-    stats_grp.Size = [tmp_stats.EqvDiam];
+    stats_grp.Size = [tmp_stats.EqvDiam]*spatialres;                                   % what is the units?
+    stats_grp.backgroundSST = [RHBblobs.(flag).ave_SSTbg]-273.15;
     %SSTbg = [RHBblobs.(flag).ave_SSTbg]-273.15;
     %blob_time = [RHBblobs.(flag).time];
     
-    for iv = 1:3
+    for iv = 1:nval
         VN = varlist{iv};
         val = stats_grp.(VN);
         
-        ip = iv+3*(j-1);
-        subplot(2,3,ip);
+        ip = iv+nval*(j-1);
+        subplot(2,nval,ip);
         histogram(val, edges.(VN));
         hold on
         yrange = get(gca,'ylim');
@@ -178,7 +183,10 @@ for j = 1:2
     end
     
 end
-xc_savefig(gcf,'Figs','Compare_blob_key_characters_for_days_with_SWC_and_withoutSWC.jpg',[0 0 12 8]);
+xc_savefig(gcf,'Figs','Compare_blob_key_characters_for_days_with_SWC_and_withoutSWC_addSSTbg.jpg',[0 0 12 8]);
 
 
-%% 4. how to summarize the results together??
+
+
+
+

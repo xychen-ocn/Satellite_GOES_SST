@@ -19,7 +19,7 @@ ATOMIC_area.lat = [8 18];
 
 % load in the RHB data:
 RHB_datadir = '/Users/xchen/Documents/MATLAB/shallow_convection/Obsv/ATOMIC/rhb/data';
-load([RHB_datadir filesep 'rhb_daily_grouped_10min_data_0909latest.mat']);
+load([RHB_datadir filesep 'EUREC4A_ATOMIC_RHB_AllinOne_v1.3.mat']);
 % load in the coastline I had:
 addpath('/Users/xchen/Documents/MATLAB/plotting_resources/gshhs_coastline_data');
 load(['NACoast_shoreline_h.mat']);   % In this version of the coast line, the Barbados is missing..

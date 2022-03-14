@@ -1,15 +1,45 @@
-function [SST_map_filled, filled_flag] = fill_cloudy_pixels(SSTL3, LON, LAT, cld_thres)
+function [SST_map_filled, filled_flag] = fill_cloudy_pixels(SSTL3, LON, LAT, time, cld_thres)
 % use linear interpolation to fill data gap:
 % input: SSTL3 (Nlat, Nlon, Nt)
 %  LON (Nlat, Nlon), LAT 
+% date: updated on Jan 26, 2022 (interpolation in time at each grid point
+% with intermittent cloud contamination (20% of the time) first, and then do spatial interpolation)
+%
 
-nt = size(SSTL3,3);
+[NY, NX, nt] = size(SSTL3);
+%nt = size(SSTL3,3);
 disp(['ntime=' num2str(nt)]);
 SST_map_filled = zeros(size(SSTL3));
 filled_flag = false(nt,1);
 
+% use temporal interpolation first to fill out some intermittent gaps:
+% then use spatial inteprolation to fill out the rest..
+thr = (time-time(1))*24;
+        
+for j = 1:NY
+    for i = 1:NX
+        SST_ts = squeeze(SSTL3(j,i,:));
+        
+        % find valid data:
+        valid = ~isnan(SST_ts);
+        good_data_prc = round(length(find(valid==1))/length(SST_ts)*10)/10; % good data percentage
+        
+        if good_data_prc>=0.6
+            SST_ts_intp(j,i,:) = interp1(thr(valid), SST_ts(valid), thr,'linear');
+%             plot(thr, SST_ts_intp,'.-');
+%             pause
+        
+        else
+            SST_ts_intp(j,i,:) = SST_ts;    % no filling.
+        end
+        
+        %pause
+    end
+end
+
+% spatial intepolration:
 for it = 1:nt
-    SST_map = squeeze(SSTL3(:,:,it));
+    SST_map = squeeze(SST_ts_intp(:,:,it));
     SST_map_copy = SST_map;
     cloud_flag = isnan(SST_map);
     
@@ -36,5 +66,7 @@ for it = 1:nt
         disp(['completed ' ,num2str(round(it/24*100)) '% of inputs..']);
     end
 end
+
+
 
 return

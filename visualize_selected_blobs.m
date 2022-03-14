@@ -1,18 +1,42 @@
-function hfig = visualize_selected_blobs(LON, LAT, SSTin, blobsIn, cldmask)
+function hfig = visualize_selected_blobs(LON, LAT, SSTin, blobsIn, cldmask, varargin)
 % Purpose: this is a script that help to plot the final results of
 % inidividaul SST blobs detected through varying dT thres.
 % Inputs:
 % Outputs:
-cmap = parula(10);
+switch nargin
+    case 5
+        cmapname = 'bwr';
+        ncolor = 16;
+    case 7
+        cmapname = varargin{1};
+        ncolor = varargin{2};
+end
+cmap = getPyPlot_cMap(cmapname,ncolor);
+
+if max(SSTin(:))<10
+    itype = 1;
+else
+    itype=2;
+end
+    
+
+%cmap = redblue;
 hfig = figure(10);
 pcolor(LON, LAT, SSTin);shading flat
 hb = colorbar;colormap(cmap);
 %caxis([0,1]);
 hold on;
-[C,h] = contour(LON, LAT, SSTin,[0:0.1:0.8],'-w');
-clabel(C,h,[0:0.2:0.8],'labelspacing',600);
+if itype ==1
+    [C,h] = contour(LON, LAT, SSTin,[0:0.1:0.8],'-w');
+    clabel(C,h,[0:0.2:0.8],'labelspacing',600);
+else
+    [C,h] = contour(LON, LAT, SSTin,[25:0.5:29],'--w');
+    clabel(C,h,[25:0.5:29],'labelspacing',600);
 
-scatter(LON(cldmask), LAT(cldmask),6,[0.75 0.75 0.75],'+');
+    
+end
+
+scatter(LON(cldmask), LAT(cldmask),6,[0.75 0.75 0.75],'.');
 hold on;
 % plot blob centers:
 plot(blobsIn.GeoLocs(:,1), blobsIn.GeoLocs(:,2), '+r');
@@ -25,14 +49,25 @@ plot(blobsIn.GeoLocs(:,1), blobsIn.GeoLocs(:,2), '+r');
 % box_coord = get_boundingbox_coord;
 
 for i = 1:size(blobsIn.GeoLocs,1)
-    contour(blobsIn.blobImageCoord(i).lon, blobsIn.blobImageCoord(i).lat, blobsIn.blobImage{i},'k');
+    if ismember('blobImageCoord', fieldnames(blobsIn))
+        contour(blobsIn.blobImageCoord(i).lon, blobsIn.blobImageCoord(i).lat, blobsIn.blobImage{i},'k');
+    else
+        contour(blobsIn.blob_image_GeoCoord(i).lon, blobsIn.blob_image_GeoCoord(i).lat, blobsIn.blob_image{i},'k');
+    end
+
     % note: the box centroids seem to shift a bit. Probably because I
     % didn't ge the centroid perfectly correct?
 end
 
 xlabel('Longitude (^{\circ})');ylabel('Latitude (^{\circ}N)');
-caxis([-1.0, 1.0]);
-set(hb,'Ticks',[-1:0.2:1]);
+if itype==1
+    caxis([-0.8, 0.8]);
+    set(hb,'Ticks',[-1:0.2:1]);
+else
+    caxis([25.5, 28]);
+    set(hb,'Ticks',[25.5:0.5:28]);
+    
+end
 %hold off;
 
 
