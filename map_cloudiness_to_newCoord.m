@@ -32,6 +32,9 @@ for ib = 1:nblobs
         x_cc = x_cc'; y_cc = y_cc';
     end
     
+    %% to-be updated: 
+    % add option here to use circle-centric, normalized coordinate. (try
+    % using function)
     % 2. establish ellipse-centric, normalized coordinate:
     theta_ori = blobsIn.stats_selected.maxFeretAng(ib);
     if theta_ori<0

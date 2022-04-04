@@ -15,7 +15,17 @@
 %
 % 3. Author:
 % XChen (drafted at Feb 21, 2022);
-%
+% To-do: 
+%  - sensitivity test for the SST threshold. (check how the size and number
+%   and shape of the blobs are changed by the SST detection threshold)
+%  - add background 2-month cloudiness as one of the output parameter. 
+
+% To-fix:
+% - 1. how the different types of day are selected
+% (grouped_data_by_large_scale conditions)
+% - 2. 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear all; clc; close all;
@@ -73,6 +83,7 @@ for it = 1:length(L4data.time)
     %         dT_thres = dT_thres_arry(ithres);
     % dT_thres = 0.1
     
+    % detect both cold and warm anomalies together. 
     [blob_info, exitflag] = find_SST_blobs(SST_anom_spatial, dT_thres, minArea, cloud_flag, 'cloudcoverage_thres',cldcv_thres, ...
         'LON_grid', LON, 'LAT_grid', LAT,'checkflag', false);
     caxis([-0.8, 0.8]);
@@ -118,6 +129,8 @@ for it = 1:length(L4data.time)
     if 1==1
         %% c: get averaged ERA5 wind direction within 2x bounding box area. (need a utility function here)
         %%    we could compute the surface wind divergence as well in the bounding box region. (need a utility function here)
+        % to-do tomorrow: update ERA5 wind to include wind at the cloud
+        % base and cloud top.
         [ave_windInfo, SearchArea_dw] = get_ERA5_windInfo_over_features(t_now, indiv_blobs_collection(it), search_RadRatio, ERA5dataFN);      % output: structure: dir, spd, u,v;
         
         
@@ -125,7 +138,7 @@ for it = 1:length(L4data.time)
         cloudiness = compute_cloudiness_over_features_from_L3C_cloudmasks(t_now, SearchArea_dw, indiv_blobs_collection(it));  % cloudiness is a structure, contain cloudiness over each bounding box.
         
         %% e: get wind aligned, feature centric, normalized coordinate to show the cloudiness map. (need a utility function here)
-        % this
+        % add option to approx feature by circle instead of by ellipse. 
         cloudiness_downwind_FCN{it} = map_cloudiness_to_newCoord(ave_windInfo,  cloudiness, indiv_blobs_collection(it));
         
         %indiv_blobs_collection(it).cloudiness_downwind_FCN = cloudiness_downwind_FCN;
@@ -150,6 +163,7 @@ gif_abspath = [figsvdir filesep gifname];
 write_frames_into_video(images, gif_abspath, 'gif');
 
 
+if 1==0
 %% cold patches:
 clear indiv_blobs_collection
 for it = 1:length(L4data.time)
@@ -250,4 +264,4 @@ if ~exist(datasvdir)
     mkdir(datasvdir)
 end
 save([datasvdir filesep 'L4_gpblend_daily_ColdSSTanom_blobs_and_cloudiness_larger_feature_domain.mat'],'indiv_blobs_collection','cloudiness_downwind_FCN','-v7.3');
-
+end

@@ -403,8 +403,10 @@ set(gca,'fontsize',14);
 % search for hrly SST maps within a day to compute the CF;
 % compare this to a 3day or 5day running mean centered on the day of
 % interest;
+load([datadir filesep 'cloudiness_freq_ATOMIC_JanFeb_updated.mat']);
 % load significance test:
 load('sigTest/significant_threshold_from_individual_sampling_in_4regimes.mat');
+load('locationsPDF_of_extreme_effective_SSTgrad_more_time_consistent.mat');
 siglev = indvtest_extreme_thres(:,2);   % extreme value of the change:
 siglev_round = round(siglev*100)/100;
 
@@ -424,7 +426,8 @@ for tt = 1 :4
     
     CloudType = cloud_types{tt};
     nt = sample_info.sampleSize(tt);
-    prc = nt /length(time_all) * 100;
+    Ntot = sum(sample_info.sampleSize);
+    prc = nt /Ntot * 100;
     %prc = sample_info.samplePrc(tt)*100;
     
     hm = pcolor(LON, LAT,cloudy_freq_cond.(CloudType).CF_anom); shading flat;
@@ -454,13 +457,23 @@ for tt = 1 :4
      if strcmp(CloudType, 'flowers')
          [Csig, hsig] = contour(LON, LAT, cloudy_freq_cond.(CloudType).CF_anom, [siglev_round(tt):0.4:1],'-k','linewidth',1.1);
          
-         clabel(Csig, hsig, [siglev_round(tt):0.4:1],'color','k');
+         %clabel(Csig, hsig, [siglev_round(tt):0.4:1],'color','k');
          
      else
          [Csig, hsig] = contour(LON, LAT, cloudy_freq_cond.(CloudType).CF_anom, [siglev_round(tt):0.2:1],'-k','linewidth',1.1);
-         clabel(Csig, hsig, [siglev_round(tt):0.2:1],'color','k');
+         %clabel(Csig, hsig, [siglev_round(tt):0.2:1],'color','k');
          
      end
+     
+     %% add large scale SST (March 30, 2022)
+     [CSST,hSST]= contour(LON_sub, LAT_sub, mean(SST_LS.(CloudType),3,'omitnan')-273.15, [25:0.5:28],'--b','linewidth',1.2);
+     clabel(CSST,hSST, [25:0.5:28]);
+
+     
+     %% add probability density estimates for warm/cold fronts in each type (March 30, 2022)
+     contour(lon_bin, lat_bin,canom_pdf{tt}, pdf_levs{tt}, 'c','linewidth',1.1);
+     contour(lon_bin, lat_bin,wanom_pdf{tt}, pdf_levs{tt}, 'm','linewidth',1.1);
+
      
      
 %     if tt ==4
@@ -480,7 +493,7 @@ for tt = 1 :4
     xlim([-59, -48]); ylim([8 18])
     set(gca,'pos',pos{tt});
 end
-xc_savefig(gcf,'Figs',['Anomaly_cloudiness_frequency_in_4Conditions_relative_to_5daymovingmean_refstate.jpg'],[0 0 12 10]);
+xc_savefig(gcf,'Figs',['Anomaly_cloudiness_frequency_in_4Conditions_relative_to_5daymovingmean_refstate_March31_added_location_of_extreme_SSTgrad.jpg'],[0 0 12 10]);
 
 
 %% plot changes in frequency for the gravel case; overlay two regions of interests + the locations of warm anomalies sampled by RHB.
@@ -559,7 +572,7 @@ for tt = 1 %:4
         end
         %colormap(redblue(20));
         hb=colorbar;
-        set(get(hb,'xlabel'),'string',{'anomaly fraction'},'fontsize',14);
+        set(get(hb,'xlabel'),'string',{'fractional change'},'fontsize',14);
         if ~strcmp(CloudType, 'flowers')
             set(hb,'ticks',[-0.5:0.1:0.5]);
         end
@@ -576,13 +589,23 @@ for tt = 1 %:4
 %         clabel(C2,h2,[299:0.5:300],'color','w', 'labelspacing',400);
         hold on;
         %% add two regions of interest:
-        if k==1
-            plot(Rvx(:,1), Rvy(:,1),'--','linewidth',2.5,'color','m');
-            text(Rvx(1,1), Rvy(1,1), {'A'}, 'horizontalAlignment','left','fontsize',20,'fontweight','bold');
-        else
-            plot(Rvx(:,1), Rvy(:,1),'--','linewidth',2.5,'color','m');
-            text(Rvx(1,1), Rvy(1,1),'A','horizontalAlignment','left','fontsize',20,'fontweight','bold');
-        end
+%         if k==1
+%             plot(Rvx(:,1), Rvy(:,1),'--','linewidth',2.5,'color','m');
+%             text(Rvx(1,1), Rvy(1,1), {'A'}, 'horizontalAlignment','left','fontsize',20,'fontweight','bold');
+%         else
+%             plot(Rvx(:,1), Rvy(:,1),'--','linewidth',2.5,'color','m');
+%             text(Rvx(1,1), Rvy(1,1),'A','horizontalAlignment','left','fontsize',20,'fontweight','bold');
+%         end
+        
+         %% add large scale SST (March 30, 2022)
+     [CSST,hSST]= contour(LON_sub, LAT_sub, mean(SST_LS.(CloudType),3,'omitnan')-273.15, [25:0.5:28],'--b','linewidth',1.2);
+     clabel(CSST,hSST, [25:0.5:28]);
+
+     
+     %% add probability density estimates for warm/cold fronts in each type (March 30, 2022)
+     contour(lon_bin, lat_bin,canom_pdf{tt}, pdf_levs{tt}, 'c','linewidth',1.1);
+     contour(lon_bin, lat_bin,wanom_pdf{tt}, pdf_levs{tt}, 'm','linewidth',1.1);
+
         
         % plot RHB sampled blobs near 15UTC
         %% plot RHB trajectory instead.
@@ -611,7 +634,7 @@ for tt = 1 %:4
         %set(gca,'pos',pos{tt});
     end
     
-    xc_savefig(gcf,'Figs',['Anomaly_cloudiness_frequency_in_day_night_comparison_' CloudType '_addedRHB_blobs_v2_regionAOnly.jpg'],[0 0 12 7]);
+    xc_savefig(gcf,'Figs',['Anomaly_cloudiness_frequency_in_day_night_comparison_' CloudType '_addedRHB_blobs_v3_added_SSTgradLocs.jpg'],[0 0 12 7]);
 
 end
 

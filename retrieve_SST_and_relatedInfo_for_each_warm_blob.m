@@ -73,19 +73,32 @@ for i = 1:NBlobs
     SST_background = reshape(SST_LSG_cutout, nrow, []);
     SST_anom = blobs.SST_cutouts{i} - SST_background;
     blobs.SSTa_cutouts{i} = SST_anom;
-    % double check:
-    if strcmp(SSTtype,'warm')
-        if max(SST_anom(:))<0
-            disp('error: SST_anom should not be negative! check code!')
-            return
-        else
-            blobs.max_SSTa(i) = max(SST_anom(:));                          % This should always be positive isn't it??
-        end
-        
-    else
-        blobs.max_coldSSTa(i) = min(SST_anom(:));
-        
+    
+    % a more general one:
+%     max_SSTanom = max(SST_anom(:));
+%     min_SSTanom = min(SST_anom(:));
+    % 03/22/2022 updated:
+    if mode(SST_anom(:))> 0 
+        % warm anomaly: 
+        blobs.max_SSTa = max(SST_anom(:));    % max_SSTa: maixmum magnitude of SSTa.
+    elseif mode(SST_anom(:)) < 0
+        % cold anomaly:
+        blobs.max_SSTa = min(SST_anom(:));
     end
+    
+    % double check:
+%     if strcmp(SSTtype,'warm')
+%         if max(SST_anom(:))<0
+%             disp('error: SST_anom should not be negative! check code!')
+%             return
+%         else
+%             blobs.max_SSTa(i) = max(SST_anom(:));                          % This should always be positive isn't it??
+%         end
+%         
+%     else
+%         blobs.max_coldSSTa(i) = min(SST_anom(:));
+%         
+%     end
     
     % put in background SST (averaged in the bounding box region)
     nrow2 = length(find((latslice>=lat0)&(latslice<=latN)));

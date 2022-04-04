@@ -1,4 +1,4 @@
-function cloudInfo = compute_cloudiness_over_features_from_L3C_cloudmasks(t, search_box, blobsIn)
+`function cloudInfo = compute_cloudiness_over_features_from_L3C_cloudmasks(t, search_box, blobsIn)
 % purpose: this script is used to compute cloudiness from L3C cloudmasks,
 % in the region of interest. 
 % Inputs: 
@@ -16,6 +16,7 @@ tday = floor(t);
 dateID = datestr(tday, 'mmmdd');
 DOY = tday - datenum(2019, 12, 31);
 
+% daily cloud mask.
 matFN = ['GOES_SST_' num2str(DOY,'%3.3i') '_' dateID '_lon62W_TO_42W_lat5N_TO_25N.mat'];
 disp(['loading' dateID])
 load([L3C_datadir filesep matFN]);
@@ -103,6 +104,9 @@ for ib = 1:length(search_box.BndBox_dw)
     cloudInfo(ib).cloudfreq = cldfreq;
     cloudInfo(ib).lon = search_lon;
     cloudInfo(ib).lat = search_lat;
+    
+    % I wanted to have the 2-month cloud frequency at the location of each
+    % eddies. need to make this (2-month cloud frequency data stored for access.)
     
     
 end

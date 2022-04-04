@@ -23,6 +23,7 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
    default_cloudcond_type = 'relaxed';
    default_cloudcover_thres = 0.1;
    default_checkflag=false;
+   default_thretype = 'positive';
    
    p = inputParser;
    % define parsing rules:
@@ -36,6 +37,8 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
    addParameter(p, 'LON_grid', XX, @isnumeric);
    addParameter(p, 'LAT_grid', YY, @isnumeric);
    addParameter(p,'checkflag', default_checkflag, @islogical);
+   checkThString = @(s) any(strcmpi(s, {'positive','negative','absolute'}));
+   addParameter(p, 'threshold_type', default_thretype, checkThString);
    
    % ready to parse the inputs:
    parse(p, f, fthres, minArea, cldmask, varargin{:});
@@ -48,7 +51,7 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
    XX = p.Results.LON_grid;
    YY = p.Results.LAT_grid;
    checkflag = p.Results.checkflag;
-   
+   threshold_type = p.Results.threshold_type;
    
    % ---------- main code starts from here on ------------- %
   
@@ -56,8 +59,14 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
    NConn =8;   %  Janssens et al. (2021) used 6-connectivity??
    
    %f=SST_anom; f0=dT_thres;
- 
-   BI=((f)>fthres); %matrix with ones where f excceeds threshold
+   if strcmpi(threshold_type, 'positive')
+       BI=((f)>=fthres); %matrix with ones where f excceeds threshold
+   elseif strcmpi(threshold_type, 'negative')
+       BI = (f<=fthres);
+   elseif strcmpi(threshold_type, 'absolute')
+       BI = abs(f)>=thres;
+   end
+       
    CCr = bwconncomp(BI,NConn); % defines the connected components of B
    Lr = labelmatrix(CCr); % each integer corresponds to one of the connected components
    num_events_orig = max(Lr(:));

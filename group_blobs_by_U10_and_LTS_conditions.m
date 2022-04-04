@@ -14,13 +14,54 @@ era.gravel_tag = ncread(eraFN,'gravel_tag');
 era.flowers_tag = ncread(eraFN,'flowers_tag');
 
 
+
+% load ncfile;
+eraFN = 'era_ATOMIC_region_averaged_U10_LTS.nc';
+era.time = ncread(eraFN,'time');
+era.timenum = datenum('1800-01-01') + era.time/24;
+era.U10_domainMean = ncread(eraFN,'U10_domainAve');
+era.LTS_domainMean = ncread(eraFN, 'LTS_domainAve');
+
+% do daily average on two quantity
+eradays = unique(floor(era.timenum));
+for i = 1:length(eradays)
+    tmask = era.timenum>=eradays(i) & era.timenum<eradays(i)+1;
+    era.U10_dailyDomainAve(i) = mean(era.U10_domainMean(tmask));
+    era.LTS_dailyDomainAve(i) = mean(era.LTS_domainMean(tmask));
+end
+era.day_timenum = eradays;
+
+% use the daily average quantity to provide a condition tag;
+cond_U10 = era.U10_dailyDomainAve>=8;
+cond_LTS = era.LTS_dailyDomainAve>=15;
+
+cond.flowers = cond_U10& cond_LTS;
+cond.gravel = cond_U10 & ~cond_LTS;
+cond.sugar = ~cond_U10 & ~cond_LTS;
+cond.fish = ~cond_U10 & cond_LTS;
+
+cloud_types = {'gravel','flowers','sugar','fish'};
+
+for m = 1:4
+    CT = cloud_types{m};
+    dayType.(CT) = era.day_timenum(cond.(CT));
+end
 % use time as a friend:
 BlobTimes = [blobsIn.time];   % hourly resolution unless missing data (etc.)
 
-cloud_types = {'sugar','gravel','flowers','fish'};
 for tt = 1:4
     CloudType = cloud_types{tt};
     CN = [CloudType, '_tag'];
+   
+%    % this following line will not work because cond is for daily and the
+%    % era timenumber is 3 hourly.   
+%    idx_sel = [];
+%    for id = 1:length(dayType.(CT))
+%        dhere = dayType.(CT)(id);
+%        tmask_1d = era.timenum>=dhere & era.timenum<dhere+1;
+%        idx_sel = [idx_sel, find(tmask_1d==1)];       
+%    end
+%    
     sel_time = era.timenum(era.(CN)==1);
     
     fid = fopen(['grouping_output_' upper(CloudType) '.txt'],'w');
@@ -54,6 +95,9 @@ for tt = 1:4
     grouped_blobs.(CloudType) = blobsIn(idx_sel);
 
 end
+
+
+
 
 
 

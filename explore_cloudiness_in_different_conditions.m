@@ -1,5 +1,8 @@
 clear all; clc; close all;
 
+% notes:
+
+
 dataroot = '/Users/xchen/Documents/MATLAB/shallow_convection/Obsv/Satellite_GOES_SST';
 datasvdir = [dataroot filesep 'blob_data/L4test'];
 figsvdir = [datasvdir filesep 'figs'];
