@@ -9,23 +9,22 @@ Title: "Welcome!"
  - Code are to download SST product from PSL ftp; extract SST features from the SST product; compute cloudiness from SST cloud mask; and find cloudiness over ellipitcal features.
 
 
-### Ongoing To-do list:
--[ ] check cross-SST wind variation and its correlation with the SST
+## Ongoing To-do list:
+-[ ] finalize feature centered analysis
 
--[ ] try computing coupling coefficients (or show the bin statistics between delta wind and delta SST)
-
--[ ] find correlation between SST and the temporal cloud fraction.
+-[ ] do feature identification in the time dimension to define duration of a feature.
 
 
-# About this ongoing analysis
-## Background 
-### 1. Park et al. (2006)
+
+## About this ongoing analysis
+
+The analyses I am doing here are replicating the method in Park et al. (2006) and Desbiolles et al.(2021). [Provide links to both papers]
+
+The former is based on feature detection and cloudiness over features are analyzed in a composite way in a transformed coordinate. 
+
+The latter is based on probability distribution analysis and found that increased cloud cover preferentially occur over warm-to-cold SST gradients (or fronts) in the Mediterrane sea.
 
 
-## Methods
-### 1. Feature identification
 
-
-### 2. coordinate transformation
 
 
