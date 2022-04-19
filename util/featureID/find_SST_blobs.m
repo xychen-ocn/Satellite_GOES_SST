@@ -64,7 +64,7 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
    elseif strcmpi(threshold_type, 'negative')
        BI = (f<=fthres);
    elseif strcmpi(threshold_type, 'absolute')
-       BI = abs(f)>=thres;
+       BI = abs(f)>=fthres;
    end
        
    CCr = bwconncomp(BI,NConn); % defines the connected components of B
@@ -235,10 +235,10 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
            lon_vec = XX(1,:); lat_vec = YY(:,1);
            dlon = mean(diff(lon_vec)); dlat = mean(diff(lat_vec));
            
-           blob_GeoLocs.clon = interp1(lon_indx, lon_vec, blob_coord(:,1));
-           blob_GeoLocs.clat = interp1(lat_indx, lat_vec', blob_coord(:,2));
-           excblobs.clon = interp1(lon_indx, lon_vec,blob_coord2(:,1));
-           excblobs.clat = interp1(lat_indx, lat_vec,blob_coord2(:,2));
+           blob_GeoLocs.clon = interp1(lon_indx, lon_vec, blob_coord(:,1), 'linear','extrap');
+           blob_GeoLocs.clat = interp1(lat_indx, lat_vec', blob_coord(:,2), 'linear','extrap');
+           excblobs.clon = interp1(lon_indx, lon_vec,blob_coord2(:,1), 'linear','extrap');
+           excblobs.clat = interp1(lat_indx, lat_vec,blob_coord2(:,2), 'linear','extrap');
            
            % get coordinate for the blob image: (and convert it to the
            % geolocations);
@@ -332,8 +332,9 @@ function [blob_out, status] = find_SST_blobs(f, fthres, minArea, cldmask,varargi
         
         nb = length(blob_pixel_coord);
         for k =1:nb
-            GeoCoord(k).lon = interp1(lon_indx, lon_vec, blob_pixel_coord(k).x);
-            GeoCoord(k).lat = interp1(lat_indx, lat_vec, blob_pixel_coord(k).y);
+            GeoCoord(k).lon = interp1(lon_indx, lon_vec, blob_pixel_coord(k).x, 'linear','extrap');
+            GeoCoord(k).lat = interp1(lat_indx, lat_vec, blob_pixel_coord(k).y, 'linear','extrap');
+
         end
         
     end

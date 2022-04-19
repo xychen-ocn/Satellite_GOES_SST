@@ -14,18 +14,22 @@ function blobs =retrieve_SST_and_relatedInfo_for_each_warm_blob(blobs, LON, LAT,
 % Outputs:
 % Authors:
 % Date: drafted Jan 11, 2022.
-SSTtype = 'warm';
+%       updated Apr 6, 2022: modify cutout_extend to be certain times of
+%       the equiv. radius. 
+%
+%SSTtype = 'warm';
 switch nargin
     case(5)
-        cutout_extend = 0.1;
+        cutout_extend = 1;       % 1x EqvRad.
     case(6)
         cutout_extend = varargin{1};
-    case(7)
-        cutout_extend = varargin{1};
-        SSTtype = varargin{2};
+%     case(7)
+%         cutout_extend = varargin{1};
+%         SSTtype = varargin{2};
 end
 
 NBlobs = length(blobs.GeoLocs);
+
 
 % search for individual warm blob:
 for i = 1:NBlobs
@@ -34,7 +38,10 @@ for i = 1:NBlobs
     clat =  blobs.GeoLocs(i,2);   % top-left corner of the box
     LX = blobs.BoundingBoxSize(i,1);
     LY = blobs.BoundingBoxSize(i,2);
-    
+
+    EqvDiam_dgr = blobs.stats_selected.EqvDiam(i) * blobs.L4_xres/111E3;   % approximately correct. (It is okay because I do not need super accurate here.)
+    ExtRad = EqvDiam_dgr/2*cutout_extend ;
+
     lon0 = clon - LX/2; %- cutout_extend;   % index of the end of the box.
     lonN = clon + LX/2; %+ cutout_extend;
     
@@ -43,8 +50,8 @@ for i = 1:NBlobs
     
     % create mask:
     cutout_mask = false(size(SST));
-    cutout_mask((LON>(lon0-cutout_extend))&(LON<(lonN+cutout_extend)))= true;
-    cutout_mask((LAT<(lat0-cutout_extend))|(LAT>(latN+cutout_extend))) = false;
+    cutout_mask((LON>(lon0-ExtRad))&(LON<(lonN+ExtRad)))= true;
+    cutout_mask((LAT<(lat0-ExtRad))|(LAT>(latN+ExtRad))) = false;
     
     bbox_mask = false(size(SST));
     bbox_mask((LON>lon0)&(LON<lonN)) = true;
@@ -60,7 +67,7 @@ for i = 1:NBlobs
     SST_LSG_bbox = SST_LS_trend(bbox_mask);
     
     latslice = LAT(:,1);
-    nrow = length(find((latslice>=lat0-cutout_extend)&(latslice<=latN+cutout_extend)));
+    nrow = length(find((latslice>=lat0-ExtRad)&(latslice<=latN+ExtRad)));
    
     
     blobs.LON_cutouts{i} = reshape(LONcutout, nrow, []);
@@ -77,13 +84,28 @@ for i = 1:NBlobs
     % a more general one:
 %     max_SSTanom = max(SST_anom(:));
 %     min_SSTanom = min(SST_anom(:));
-    % 03/22/2022 updated:
-    if mode(SST_anom(:))> 0 
-        % warm anomaly: 
-        blobs.max_SSTa = max(SST_anom(:));    % max_SSTa: maixmum magnitude of SSTa.
-    elseif mode(SST_anom(:)) < 0
-        % cold anomaly:
-        blobs.max_SSTa = min(SST_anom(:));
+    % 03/22/2022 updated: 4/5 updated again.
+    % use the SST anom at the object centroid to decide. 
+    if ~any(isnan(blobs.GeoLocs(i,:)))   % seems very strange. why??
+        SST_anom_at_bcen = interp2(blobs.LON_cutouts{i},  blobs.LAT_cutouts{i}, SST_anom, ...
+            blobs.GeoLocs(i,1), blobs.GeoLocs(i,2));
+        if SST_anom_at_bcen> 0
+            % warm anomaly:
+            blobs.max_SSTa(i) = max(SST_anom(:));    % max_SSTa: maixmum magnitude of SSTa.
+        elseif SST_anom_at_bcen < 0
+            % cold anomaly:
+            blobs.max_SSTa(i) = min(SST_anom(:));
+        end
+        
+        % put in background SST (averaged in the bounding box region)
+        nrow2 = length(find((latslice>=lat0)&(latslice<=latN)));
+        SST_background_bbox = reshape(SST_LSG_bbox, nrow2, []);
+        SST_bg_ave = mean(SST_background_bbox(:),'omitnan');
+        blobs.ave_SSTbg(i) = SST_bg_ave;
+        
+    else
+        blobs.max_SSTa(i) = NaN;
+        blobs.ave_SSTbg(i) = NaN;
     end
     
     % double check:
@@ -100,11 +122,7 @@ for i = 1:NBlobs
 %         
 %     end
     
-    % put in background SST (averaged in the bounding box region)
-    nrow2 = length(find((latslice>=lat0)&(latslice<=latN)));
-    SST_background_bbox = reshape(SST_LSG_bbox, nrow2, []);
-    SST_bg_ave = mean(SST_background_bbox(:));
-    blobs.ave_SSTbg(i) = SST_bg_ave;
+
     
    
     
