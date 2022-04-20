@@ -37,7 +37,7 @@ for it = 1:NT
     end
     
    
-    for i = 1:npixel
+    parfor i = 1:npixel
         
         ccenx = cgrid.LONsub(i); cceny = cgrid.LATsub(i);
         
