@@ -1,4 +1,4 @@
-function [ave_windInfo, search_box] = get_ERA5_windInfo_over_features(t, blobsIn, search_RadRatio, ERA5dataFN, varargin)
+function [ave_windInfo, search_box] = get_ERA5_windInfo_over_features(t, blobsIn, search_RadRatio, ERA5_absFN, varargin)
 % purpose: get area-averaged ERA5 10-m surface wind; Area is determined by
 % Bounding box and the search radius;
 % Input: 
@@ -17,8 +17,8 @@ end
 
 
 
-ERA5_datadir = '/Users/xchen/Documents/MATLAB/shallow_convection/Obsv/Satellite_GOES_SST/era5_data';
-ERA5_absFN = [ERA5_datadir filesep ERA5dataFN];
+%ERA5_datadir = '/Users/xchen/Documents/MATLAB/shallow_convection/Obsv/Satellite_GOES_SST/era5_data';
+%ERA5_absFN = [ERA5_datadir filesep ERA5dataFN];
 
 if ~exist(ERA5_absFN)
     disp('no such ERA5 file');
@@ -98,19 +98,21 @@ else
         
         if isempty(find(mask==1))
             
-            disp('no ERA5 grid at the search location');
-            % make local grid at ERA5 resolution for interpolation:
-            gridx = [min(square_vx): 0.25: max(square_vx)];
-            gridy = [min(square_vy): 0.25: max(square_vy)];  
-            
-            [GX, GY] = meshgrid(gridx, gridy);
-            
-            %uwnd_vertices = interp2(ERA5.lon-360, ERA5.lat, uwnd, [square_vx(1:4), xb], [square_vy(1:4), yb]);
-            %vwnd_vertices = interp2(ERA5.lon-360, ERA5.lat, vwnd, [square_vx(1:4), xb], [square_vy(1:4), yb]);
-            uwnd_intp = interp2(ERA5.lon-360, ERA5.lat, uwnd, GX, GY);
-            vwnd_intp = interp2(ERA5.lon-360, ERA5.lat, vwnd, GX, GY);
-            mean_u = mean(uwnd_intp,'omitnan');
-            mean_v = mean(vwnd_intp,'omitnan');
+%             disp('no ERA5 grid at the search location');
+%             % make local grid at ERA5 resolution for interpolation:
+%             gridx = [min(square_vx): 0.25: max(square_vx)];
+%             gridy = [min(square_vy): 0.25: max(square_vy)];  
+%             
+%             [GX, GY] = meshgrid(gridx, gridy);
+%             
+%             %uwnd_vertices = interp2(ERA5.lon-360, ERA5.lat, uwnd, [square_vx(1:4), xb], [square_vy(1:4), yb]);
+%             %vwnd_vertices = interp2(ERA5.lon-360, ERA5.lat, vwnd, [square_vx(1:4), xb], [square_vy(1:4), yb]);
+%             uwnd_intp = interp2(ERA5.lon-360, ERA5.lat, uwnd, GX, GY);
+%             vwnd_intp = interp2(ERA5.lon-360, ERA5.lat, vwnd, GX, GY);
+%             mean_u = mean(uwnd_intp,'omitnan');
+%             mean_v = mean(vwnd_intp,'omitnan');
+            mean_u = NaN;
+            mean_v = NaN;
             
         else
             

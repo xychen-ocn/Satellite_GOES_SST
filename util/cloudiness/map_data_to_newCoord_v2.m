@@ -1,5 +1,5 @@
 %function [cloudiness, CF_regridded] = map_cloudiness_to_newCoord(ave_windInfo, cloudiness, blobsIn, varargin)
- function dataIn = map_data_to_newCoord(ave_windInfo,dataIn, blobsIn, varargin)
+ function dataIn = map_data_to_newCoord_v2(ave_windInfo,dataIn, blobsIn, varargin)
 %  
 % purpose: map the data in the cartesian coordinate to a feature centric,
 %          trade-wind aligned, and normalized coordinate.
@@ -22,7 +22,7 @@
 
 default_xgrd = [-3:0.05:3];
 default_ygrd = default_xgrd;
-expected_varns={'cloudfreq', 'cloudfrac','SST_cutouts', 'SSTa_cutouts', 'eSSTgrad','winddiv','uwnd','vwnd'};
+expected_varns={'cloudfreq', 'cloudfrac', 'SST_cutouts', 'SSTa_cutouts', 'eSSTgrad'};
 
 %% parse inputs:
 default_option = 'ellipse';
@@ -77,7 +77,9 @@ for ib = 1:nblobs
     
     % 1. establish feature centric cartesian coordinate
     x_cc = (data.lon - bx)*111E3.*cosd(data.lat); y_cc = (data.lat - by)*111E3;
-      
+    
+   
+        
     
     if numel(x_cc)==length(x_cc) & ~isrow(x_cc)    % a vector
         x_cc = x_cc'; y_cc = y_cc';
@@ -89,50 +91,64 @@ for ib = 1:nblobs
     end
     
    
-  % 2. establish ellipse-centric, normalized coordinate:
+    %% compute needed dimensions information for each blob;
+    D = blobsIn.stats_selected.EqvDiam(ib)* blobsIn.L4_xres;           % units: m
+    
+    theta_ori = blobsIn.stats_selected.maxFeretAng(ib);
+    if theta_ori<0
+        theta_ori = theta_ori+180;
+    end
+    majA = blobsIn.stats_selected.MajAxisLen(ib)/2 * blobsIn.L4_xres;               % in pixel, --> convert to km
+    minB = blobsIn.stats_selected.MinAxisLen(ib)/2 * blobsIn.L4_xres;
+    
+    % direction of xE is aligned with the major axis direction
+    % (orientation);
+    R_E = rotz(-theta_ori);
+    
+    EllipseCoord = R_E*[x_cc; y_cc];        % rotated coordinate
+    
+    xE = EllipseCoord(1,:);  yE = EllipseCoord(2,:);
+    
+    
+    %% to-be updated:
+    %% double check if the following code modification is correct..
+    % add option here to use circle-centric, normalized coordinate. (try
+    % using function)
+    % 2. establish ellipse-centric, normalized coordinate:
     if strcmpi(options, 'circle')
         % 1. normalize the coordinate
-        D = blobsIn.stats_selected.EqvDiam(ib)* blobsIn.L4_xres;           % units: m       
         Rb = D/2;
         
         % quite similar to the ellipse: first normalize in the polar
         % coordinate, and then transform back to catesian
-        Rp = sqrt(x_cc.^2 + y_cc.^2);
+        %Rp = sqrt(x_cc.^2 + y_cc.^2);
+        Rp = sqrt(xE.^2 + yE.^2);
         
         Rn = Rp./Rb;
-        thp = atan2(y_cc, x_cc);
+        %thp = atan2(y_cc, x_cc);
+        thp = atan2(yE, xE);
         xEn = Rn.*cos(thp);
         yEn = Rn.*sin(thp);
         
         % 2. rebase the coordinate so that the y-axis is aligned with the
         % wind direction.
+        %% update note: Apr 24: instead of make y-axis aligned with wind direction, make it aligned with the SST gradient downwind..
         % this will need to be edited.
-        theta_wind= xdir(ib);
-        theta_WE = theta_wind-0;  % delta theta from the x-axis. Here, x-axis is due east.
+        %         theta_wind= xdir(ib);
+        %         theta_WE = theta_wind-0;  % delta theta from the x-axis. Here, x-axis is due east.
+        %
+        %         theta_AE = theta_WE - 90;   %? delta theta from the y-axis.
+        %
+        %         Rot_AE = rotz(-theta_AE);
+        %
+        %         WindAligned_Coord = Rot_AE * [xEn;yEn];
         
-        theta_AE = theta_WE - 90;   %? delta theta from the y-axis.
         
-        Rot_AE = rotz(-theta_AE);
         
-        WindAligned_Coord = Rot_AE * [xEn;yEn];
-                
         
     elseif strcmpi(options, 'ellipse')
         
-        theta_ori = blobsIn.stats_selected.maxFeretAng(ib);
-        if theta_ori<0
-            theta_ori = theta_ori+180;
-        end
-        majA = blobsIn.stats_selected.MajAxisLen(ib)/2 * blobsIn.L4_xres;               % in pixel, --> convert to km
-        minB = blobsIn.stats_selected.MinAxisLen(ib)/2 * blobsIn.L4_xres;
         
-        % direction of xE is aligned with the major axis direction
-        % (orientation);
-        R_E = rotz(-theta_ori);
-        
-        EllipseCoord = R_E*[x_cc; y_cc];        % rotated coordinate
-        
-        xE = EllipseCoord(1,:);  yE = EllipseCoord(2,:);
         
         % normalization by the ellipse boundary (equiv. boundary of the warm features)
         Rp = sqrt(xE.^2 + yE.^2);
@@ -148,22 +164,48 @@ for ib = 1:nblobs
         xEn = Rn.*cos(thp);
         yEn = Rn.*sin(thp);
         
+    end
+    % 3. rotate the ellipse-centric, normalized coordinate such that its y axis aligns with
+    % the wind direction.
+    % rotate to match the downwind SST gradient instead. (north will
+    % always corresponds to the maximum effective gradient)
+    theta_wind= xdir(ib);
+    theta_WE = theta_wind-theta_ori;   % angle between wind and the blob orientation.
+    %
+    %         theta_AE = theta_WE - 90;
+    %
+    %         Rot_AE = rotz(-theta_AE);
+    %
+    %         WindAligned_Coord = Rot_AE * [xEn;yEn];
+    
+    if abs(theta_WE)>90
+        ang_wind_majA = 180-abs(theta_WE);
+    else
+        ang_wind_majA = abs(theta_WE);
+    end
+    
+    if ang_wind_majA>=45
+        % wind vector closer y-axis;
+        % no need to rotate y-axis;
+        WindAligned_Coord = [xEn; yEn];
+    else
+        % wind vector closer to x-axis:
+        % rotate ellipse major axis to be the y axis:
         
-        % 3. rotate the ellipse-centric, normalized coordinate such that its y axis aligns with
-        % the wind direction.
-        theta_wind= xdir(ib);
-        theta_WE = theta_wind-theta_ori;
+        % -90 or 90 needs to be based on the sign of theta_WE:
+        rotdir = sign(cosd(theta_WE));   % Is this a potential problem??
+        Rot_AE = rotz(rotdir*90);
         
-        theta_AE = theta_WE - 90;
+        WindAligned_Coord = Rot_AE * [xEn; yEn];
+    end
         
-        Rot_AE = rotz(-theta_AE);
-        
-        WindAligned_Coord = Rot_AE * [xEn;yEn];
+                
+    %---------------- the above are latest modification that needed double check -------- %        
         
 %         cloudiness(ib).WindAligned_Coord = WindAligned_Coord;
 %         cloudiness(ib).mean_wspd = ave_windInfo.wndspd;
         
-    end
+  
     
     dataIn(ib).WindAligned_Coord = WindAligned_Coord;
     dataIn(ib).mean_wspd = ave_windInfo.wndspd;
@@ -200,14 +242,14 @@ for ib = 1:nblobs
                 %scatter(cldm.lon, cldm.lat, 50, cloudiness(ib).cloudfreq, 'filled','marker','s');
                 scatter(x_cc, y_cc, 50, dataIn(ib).(varn)(:), 'filled','marker','s');
                 hold on;
-                if strcmpi(options, 'ellipse')
+               % if strcmpi(options, 'ellipse')
                     % plot ellipse:
                     hl = plot_ellipse(gca, 0,0, majA, minB,theta_ori);
-                elseif strcmpi(options, 'circle')
+                %elseif strcmpi(options, 'circle')
                     % plot circle instead:
                     hl = circle(0,0,Rb, 'w',2);
                     
-                end
+                %end
                 % plot wind direction:
                 quiver(0,0, ave_windInfo(ib).u*10E3, ave_windInfo(ib).v*10E3,'k', 'linewidth',2);
                 axis('square');
@@ -216,7 +258,7 @@ for ib = 1:nblobs
                 %caxis([0, 1])
                 
                 
-                if strcmpi(options, 'ellipse')
+               % if strcmpi(options, 'ellipse')
                     subplot(1,3,2);
                     scatter(xE, yE, 50, dataIn(ib).(varn)(:), 'filled','marker','s');
                     hold on
@@ -228,7 +270,7 @@ for ib = 1:nblobs
                     axis('square');
                     colormap(jet); colorbar;
                     %caxis([0, 1])
-                end
+              %  end
                 
                 % doesn't seem correct??
                 subplot(1,3,3);
@@ -242,7 +284,7 @@ for ib = 1:nblobs
                 %caxis([0, 1])
                 
             end
-            %pause(0.2)
+            %pause
         end
     end
 

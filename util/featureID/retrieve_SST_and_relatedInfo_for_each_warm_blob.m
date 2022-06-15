@@ -59,6 +59,7 @@ for i = 1:NBlobs
     
     % use the index to slice the SST matrix:
     SSTcutout = SST(cutout_mask);
+    if ~isempty(SSTcutout)
     %SSTacutout = SST_anom(cutout_mask);
     LONcutout = LON(cutout_mask);
     LATcutout = LAT(cutout_mask);
@@ -106,6 +107,18 @@ for i = 1:NBlobs
     else
         blobs.max_SSTa(i) = NaN;
         blobs.ave_SSTbg(i) = NaN;
+    end
+    
+    
+    else
+        blobs.LON_cutouts{i} =NaN;
+        blobs.LAT_cutouts{i} = NaN;
+        blobs.SST_cutouts{i} = NaN;
+        blobs.SSTa_cutouts{i} = NaN;
+        
+        blobs.max_SSTa(i) = NaN;
+        blobs.ave_SSTbg(i) = NaN;
+        
     end
     
     % double check:
