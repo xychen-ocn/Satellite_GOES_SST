@@ -22,14 +22,14 @@ coordsub.YY = coord.YY(subrange.y, subrange.x);
 % setting up plotting parameters.
 cmap_div = redblue(32);
 cmap_jet = jet(32);
-varlist = {'SSTa_cutouts','eSSTgrad',  ...      %  'cloudfrac',
+varlist = {'SSTa_cutouts','eSSTgrad', 'SSTlap', ...      %  'cloudfrac',
     'cloudfrac_relanom_2mon','winddiv_highfreq'}; %,'cloudfreq_std', 'cldfreq_anom_std'};     % why I still don't have cloudfreq_anom, needs to be added.??
-varname = {'SST anom.', '\bf{u} \cdot \nablaSST',  ... %'cloudiness',
+varname = {'SST anom.', '\bf{u} \cdot \nablaSST', '\nabla^2SST', ... %'cloudiness',
     {'cloudiness spatial anomalies'; ' relative to 2month mean'}, {'wind divergence'}}; %{'cloudiness anomalies', 'from "climatology"' }%, 'cloudiness stdv.', 'cloudiness anomaly stdv.'};
-varunits = {'K', 'K/hr', '', 's^{-1}'};
-colormaps = {cmap_div, cmap_div, cmap_div, cmap_div};  %cmap_jet,
-caxis_range_default ={[-0.15, 0.15], [-7.5*10^(-5), 7.5*10^-5],  [-0.05,0.05], [-5e-4, 5e-4]};    % [0.3, 0.5],, [-0.3,0.3]
-xticks = {[-0.15:0.05:0.15], [-6e-5:2e-5:6e-5], [-0.05:0.01:0.05], [-5e-4:1e-4:5e-4]};
+varunits = {'K', 'K/hr', 'K/100km^2', '', 's^{-1}'};
+colormaps = {cmap_div, cmap_div, cmap_div, cmap_div, cmap_div};  %cmap_jet,
+caxis_range_default ={[-0.15, 0.15], [-7.5*10^(-2), 7.5*10^-2], [-0.05, 0.05], [-0.05,0.05], [-5e-4, 5e-4]};    % [0.3, 0.5],, [-0.3,0.3]
+xticks = {[-0.15:0.05:0.15], [-6e-2:2e-2:6e-2], [-0.05:0.01:0.05], [-0.05:0.01:0.05], [-5e-4:1e-4:5e-4]};
     
 nrow = 2;  ncol=length(varlist);
 xspace = 0.08; yspace = 0.08;

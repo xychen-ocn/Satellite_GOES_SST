@@ -87,7 +87,7 @@ for i = 1:nblobs
     elseif isfield(data_struct, 'SST_cutouts')  || isfield(data_struct, 'winddiv')
         % do operation for two variables in this data structure;
         if isfield(data_struct, 'SST_cutouts')
-            var_list = {'SST_cutouts','SSTa_cutouts', 'eSSTgrad','refCF_LP2monmean','refCF_LPdaily'};
+            var_list = {'SST_cutouts','SSTa_cutouts', 'eSSTgrad','SSTlap'};
         else
             var_list = {'winddiv','winddiv_highfreq', 'uwnd','vwnd'};
         end

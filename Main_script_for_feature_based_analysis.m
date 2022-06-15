@@ -208,7 +208,17 @@ for it =1 :length(L4SST_data.time)
     % using ave_windInfo and the daily SST map, I can compute effective
     % SST gradient:  % the effective SST gradient is computed using the
     % background averaged wind speed...
-    effective_SSTgrad = compute_effective_SSTgrad_over_features(ave_windInfo, indiv_blobs_collection(it));
+    ave_windInfo_array = downwind_FCN_regridded(it).ave_windInfo;
+    ave_windInfoNames = fieldnames(ave_windInfo_array);
+    for i = 1:length(ave_windInfo_array.u)
+        for iv = 1:length(ave_windInfoNames)
+            FN = ave_windInfoNames{iv};
+            ave_windInfo(i).(FN) = ave_windInfo_array.(FN)(i);
+        end
+    end
+    
+    % I don't think that will change the results significantly.
+    [effective_SSTgrad, SSTlap] = compute_eSSTgrad_SSTLap_over_features(ave_windInfo, indiv_blobs_collection(it));
     
     % add compute laplacian using the same method as used in Li and Carbone (2012)
     % laplacianSST = compute_laplacian_SST_over_features(ave_windInfo, indiv_blobs_collection(it))
@@ -242,11 +252,12 @@ for it =1 :length(L4SST_data.time)
     end
     for ib = 1:nblobs
         SSTblob_cutouts(ib).eSSTgrad = effective_SSTgrad(ib).val;
+        SSTblob_cutouts(ib).SSTlap = SSTlap{ib};
     end
     
     % I could increase the cutout size (the same cutout radius as the
     % cloudiness?
-    SSTcutout_downwind_FCN = map_data_to_newCoord(ave_windInfo,   SSTblob_cutouts, indiv_blobs_collection(it), 'options', feature_norm_type, ...
+    SSTcutout_downwind_FCN = map_data_to_newCoord(ave_windInfo, SSTblob_cutouts, indiv_blobs_collection(it), 'options', feature_norm_type, ...
         'xgrid', xgrd_vec, 'ygrid', ygrd_vec);
     
     

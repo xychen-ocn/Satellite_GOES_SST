@@ -22,7 +22,7 @@
 
 default_xgrd = [-3:0.05:3];
 default_ygrd = default_xgrd;
-expected_varns={'cloudfreq', 'cloudfrac','SST_cutouts', 'SSTa_cutouts', 'eSSTgrad','winddiv','uwnd','vwnd'};
+expected_varns={'cloudfreq', 'cloudfrac','SST_cutouts', 'SSTa_cutouts', 'eSSTgrad','SSTlap','winddiv','uwnd','vwnd'};
 
 %% parse inputs:
 default_option = 'ellipse';
